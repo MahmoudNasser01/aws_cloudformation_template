@@ -4,10 +4,10 @@ Parameters:
     Default: t2.micro
     Description: EC2 instance type
   KeyName:
-    Type: AWS::EC2::KeyPair::KeyName
+    Type: 'AWS::EC2::KeyPair::KeyName'
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
   InstanceAMI:
-    Type: AWS::EC2::Image::Id
+    Type: 'AWS::EC2::Image::Id'
     Description: EC2 instance AMI ID
     Default: ami-0c55b159cbfafe1f0
   EC2Tag:
@@ -58,10 +58,9 @@ Parameters:
     Type: String
     Description: GitHub access token to use for the CodePipeline
     NoEcho: true
-
 Resources:
   EC2SecurityGroup:
-    Type: AWS::EC2::SecurityGroup
+    Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupName: EC2SecurityGroup
       GroupDescription: Security group for EC2 instance
@@ -72,7 +71,7 @@ Resources:
           ToPort: 22
           CidrIp: 0.0.0.0/0
   EC2Instance:
-    Type: AWS::EC2::Instance
+    Type: 'AWS::EC2::Instance'
     Properties:
       ImageId: !Ref InstanceAMI
       InstanceType: !Ref InstanceType
@@ -87,11 +86,11 @@ Resources:
         - Key: Name
           Value: !Ref EC2Tag
   EIP:
-    Type: AWS::EC2::EIP
+    Type: 'AWS::EC2::EIP'
     Properties:
       InstanceId: !Ref EC2Instance
   DBSubnetGroup:
-    Type: AWS::RDS::DBSubnetGroup
+    Type: 'AWS::RDS::DBSubnetGroup'
     Properties:
       DBSubnetGroupName: DBSubnetGroup
       DBSubnetGroupDescription: DB Subnet Group
@@ -99,7 +98,7 @@ Resources:
         - !Ref PrivateSubnet1
         - !Ref PrivateSubnet2
   DBInstance:
-    Type: AWS::RDS::DBInstance
+    Type: 'AWS::RDS::DBInstance'
     Properties:
       DBName: !Ref DBName
       DBInstanceIdentifier: RDSInstance
@@ -112,50 +111,56 @@ Resources:
       MultiAZ: !Ref DBMultiAZ
       StorageType: !Ref DBStorageType
       VPCSecurityGroups:
-        - !GetAtt [ DBSecurityGroup, GroupId ]
+        - !GetAtt 
+          - DBSecurityGroup
+          - GroupId
       DBSubnetGroupName: !Ref DBSubnetGroup
   DBSecurityGroup:
-    Type: AWS::RDS::DBSecurityGroup
+    Type: 'AWS::RDS::DBSecurityGroup'
     Properties:
       GroupDescription: RDS security group
       DBSecurityGroupIngress:
         - EC2SecurityGroupName: !Ref EC2SecurityGroup
-          EC2SecurityGroupId: !GetAtt [ EC2SecurityGroup, GroupId ]
+          EC2SecurityGroupId: !GetAtt 
+            - EC2SecurityGroup
+            - GroupId
   CodePipelineRole:
-    Type: AWS::IAM::Role
+    Type: 'AWS::IAM::Role'
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: 2012-10-17
         Statement:
           - Effect: Allow
             Principal:
               Service: codepipeline.amazonaws.com
-            Action: sts:AssumeRole
+            Action: 'sts:AssumeRole'
       Policies:
         - PolicyName: CodePipelinePolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: 2012-10-17
             Statement:
               - Effect: Allow
                 Action:
-                  - s3:*
-                  - codecommit:*
-                  - codebuild:*
-                  - codedeploy:*
-                  - cloudformation:*
-                  - elasticbeanstalk:*
-                  - ec2:*
-                  - ecs:*
-                  - iam:*
-                  - lambda:*
-                  - sns:*
-                  - sqs:*
+                  - 's3:*'
+                  - 'codecommit:*'
+                  - 'codebuild:*'
+                  - 'codedeploy:*'
+                  - 'cloudformation:*'
+                  - 'elasticbeanstalk:*'
+                  - 'ec2:*'
+                  - 'ecs:*'
+                  - 'iam:*'
+                  - 'lambda:*'
+                  - 'sns:*'
+                  - 'sqs:*'
                 Resource: '*'
   CodePipeline:
-    Type: AWS::CodePipeline::Pipeline
+    Type: 'AWS::CodePipeline::Pipeline'
     Properties:
       Name: CodePipeline
-      RoleArn: !GetAtt [ CodePipelineRole, Arn ]
+      RoleArn: !GetAtt 
+        - CodePipelineRole
+        - Arn
       Stages:
         - Name: Source
           Actions:
@@ -203,10 +208,12 @@ Resources:
                 - Name: BuildArtifact
               RunOrder: 3
   CodeBuildProject:
-    Type: AWS::CodeBuild::Project
+    Type: 'AWS::CodeBuild::Project'
     Properties:
       Name: CodeBuildProject
-      ServiceRole: !GetAtt [ CodeBuildServiceRole, Arn ]
+      ServiceRole: !GetAtt 
+        - CodeBuildServiceRole
+        - Arn
       Artifacts:
         Location:
           S3Location:
@@ -214,7 +221,7 @@ Resources:
             Path: build
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/standard:5.0
+        Image: 'aws/codebuild/standard:5.0'
         Type: LINUX_CONTAINER
         EnvironmentVariables:
           - Name: DB_NAME
@@ -229,7 +236,7 @@ Resources:
       Source:
         Type: CODEPIPELINE
   CodeBuildBucket:
-    Type: AWS::S3::Bucket
+    Type: 'AWS::S3::Bucket'
     Properties:
       BucketName: !Sub '${AWS::StackName}-codebuild-bucket'
       LifecycleConfiguration:
@@ -237,66 +244,68 @@ Resources:
           - ExpirationInDays: 7
             Status: Enabled
   CodeBuildServiceRole:
-    Type: AWS::IAM::Role
+    Type: 'AWS::IAM::Role'
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: 2012-10-17
         Statement:
           - Effect: Allow
             Principal:
               Service: codebuild.amazonaws.com
-            Action: sts:AssumeRole
+            Action: 'sts:AssumeRole'
       Policies:
         - PolicyName: CodeBuildPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: 2012-10-17
             Statement:
               - Effect: Allow
                 Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: arn:aws:logs:*:*:*
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: 'arn:aws:logs:*:*:*'
               - Effect: Allow
                 Action:
-                  - s3:*
+                  - 's3:*'
                 Resource: !Sub 'arn:aws:s3:::${CodeBuildBucket}'
   CodeDeployApplication:
-    Type: AWS::CodeDeploy::Application
+    Type: 'AWS::CodeDeploy::Application'
     Properties:
       ApplicationName: CodeDeployApplication
   CodeDeployDeploymentGroup:
-    Type: AWS::CodeDeploy::DeploymentGroup
+    Type: 'AWS::CodeDeploy::DeploymentGroup'
     Properties:
       ApplicationName: !Ref CodeDeployApplication
       DeploymentGroupName: CodeDeployDeploymentGroup
       DeploymentConfigName: CodeDeployDefault.AllAtOnce
       AutoScalingGroups:
         - !Ref AutoScalingGroup
-      ServiceRoleArn: !GetAtt [ CodeDeployServiceRole, Arn ]
+      ServiceRoleArn: !GetAtt 
+        - CodeDeployServiceRole
+        - Arn
   CodeDeployServiceRole:
-    Type: AWS::IAM::Role
+    Type: 'AWS::IAM::Role'
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: 2012-10-17
         Statement:
           - Effect: Allow
             Principal:
               Service: codedeploy.amazonaws.com
-            Action: sts:AssumeRole
+            Action: 'sts:AssumeRole'
       Policies:
         - PolicyName: CodeDeployPolicy
           PolicyDocument:
-            Version: '2012-10-17'
+            Version: 2012-10-17
             Statement:
               - Effect: Allow
                 Action:
-                  - autoscaling:*
-                  - ec2:*
-                  - elasticloadbalancing:*
+                  - 'autoscaling:*'
+                  - 'ec2:*'
+                  - 'elasticloadbalancing:*'
                 Resource: '*'
   AutoScalingGroup:
-    Type: AWS::AutoScaling::AutoScalingGroup
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
       VPCZoneIdentifier:
         - !Ref PublicSubnet1
@@ -308,30 +317,44 @@ Resources:
       TargetGroupARNs:
         - !Ref TargetGroup
   LaunchConfig:
-    Type: AWS::AutoScaling::LaunchConfiguration
+    Type: 'AWS::AutoScaling::LaunchConfiguration'
     Properties:
-      ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
+      ImageId: !FindInMap 
+        - RegionMap
+        - !Ref 'AWS::Region'
+        - AMI
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
       SecurityGroups:
         - !Ref EC
-      UserData:
-        Fn::Base64: !Sub |
+      UserData: !Base64 
+        'Fn::Sub': >
           #!/bin/bash
+
           echo "export DB_NAME=${DBName}" >> /etc/profile.d/environment.sh
-          echo "export DB_USERNAME=${DBUsername}" >> /etc/profile.d/environment.sh
-          echo "export DB_PASSWORD=${DBPassword}" >> /etc/profile.d/environment.sh
+
+          echo "export DB_USERNAME=${DBUsername}" >>
+          /etc/profile.d/environment.sh
+
+          echo "export DB_PASSWORD=${DBPassword}" >>
+          /etc/profile.d/environment.sh
+
           yum update -y
+
           yum install -y python3-pip
+
           pip3 install django
-          echo "from django.contrib.auth.models import User; User.objects.create_superuser('admin', 'admin@example.com', 'password')" | python3 manage.py shell
+
+          echo "from django.contrib.auth.models import User;
+          User.objects.create_superuser('admin', 'admin@example.com',
+          'password')" | python3 manage.py shell
       BlockDeviceMappings:
         - DeviceName: /dev/xvda
           Ebs:
             VolumeSize: !Ref EC2VolumeSize
             VolumeType: gp2
   TargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
       Name: !Ref TargetGroupName
       Port: 80
@@ -339,7 +362,7 @@ Resources:
       TargetType: instance
       VpcId: !Ref VPC
   LoadBalancer:
-    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
       Name: !Ref LoadBalancerName
       Scheme: internet-facing
@@ -350,7 +373,7 @@ Resources:
         - !Ref PublicSubnet2
       Type: application
   Listener:
-    Type: AWS::ElasticLoadBalancingV2::Listener
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
       DefaultActions:
         - Type: forward
@@ -359,7 +382,7 @@ Resources:
       Port: 80
       Protocol: HTTP
   ELB:
-    Type: AWS::EC2::SecurityGroup
+    Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: Enable HTTP access
       VpcId: !Ref VPC
@@ -373,7 +396,7 @@ Resources:
           ToPort: 22
           CidrIp: 0.0.0.0/0
   RDS:
-    Type: AWS::RDS::DBInstance
+    Type: 'AWS::RDS::DBInstance'
     Properties:
       DBName: !Ref DBName
       DBInstanceIdentifier: !Ref DBInstanceIdentifier
@@ -386,19 +409,13 @@ Resources:
       PubliclyAccessible: false
       MultiAZ: !Ref MultiAZ
       VPCSecurityGroups:
-        - !GetAtt [ RDSSecurityGroup, GroupId ]
+        - !GetAtt 
+          - RDSSecurityGroup
+          - GroupId
       DBSubnetGroupName: !Ref DBSubnetGroup
   RDSSecurityGroup:
-    Type: AWS::RDS::DBSecurityGroup
+    Type: 'AWS::RDS::DBSecurityGroup'
     Properties:
       GroupDescription: Enable database access
       DBSecurityGroupIngress:
         - EC2SecurityGroupName: !Ref EC
-  DBSubnetGroup:
-    Type: AWS::RDS::DBSubnetGroup
-    Properties:
-      DBSubnetGroupName: !Ref DBSubnetGroupName
-      SubnetIds:
-        - !Ref PrivateSubnet1
-        - !Ref PrivateSubnet2
-
