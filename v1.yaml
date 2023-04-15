@@ -208,9 +208,6 @@ Resources:
       Name: CodeBuildProject
       ServiceRole: !GetAtt [ CodeBuildServiceRole, Arn ]
       Artifacts:
-        Type
-        
-        
         Location:
           S3Location:
             Bucket: !Ref CodeBuildBucket
