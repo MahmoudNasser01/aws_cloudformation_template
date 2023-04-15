@@ -396,7 +396,7 @@ Resources:
           ToPort: 22
           CidrIp: 0.0.0.0/0
   RDS:
-    Type: 'AWS::RDS::DBInstance'
+    Type: AWS::RDS::DBInstance
     Properties:
       DBName: !Ref DBName
       DBInstanceIdentifier: !Ref DBInstanceIdentifier
@@ -409,13 +409,20 @@ Resources:
       PubliclyAccessible: false
       MultiAZ: !Ref MultiAZ
       VPCSecurityGroups:
-        - !GetAtt 
-          - RDSSecurityGroup
-          - GroupId
+        - !Ref RDSSecurityGroup
       DBSubnetGroupName: !Ref DBSubnetGroup
+    
   RDSSecurityGroup:
-    Type: 'AWS::RDS::DBSecurityGroup'
+    Type: AWS::RDS::DBSecurityGroup
     Properties:
       GroupDescription: Enable database access
       DBSecurityGroupIngress:
         - EC2SecurityGroupName: !Ref EC
+
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: !Ref DBSubnetGroupName
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
